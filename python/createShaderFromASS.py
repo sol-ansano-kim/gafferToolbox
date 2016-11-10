@@ -107,8 +107,68 @@ class ArnoldFunctions:
             elif arnold.AI_TYPE_NODE == param_type:
                 value = None
 
+            elif arnold.AI_TYPE_POINT2 == param_type:
+                pnt2 = arnold.AiNodeGetPnt2(node, param_name)
+                value = IECore.V2f(pnt2.x, pnt2.y)
+
+            elif arnold.AI_TYPE_ARRAY == param_type:
+                arry = arnold.AiNodeGetArray(node, param_name)
+
+                if arry.contents.type == arnold.AI_TYPE_INT:
+                    value = IECore.IntVectorData()
+                    for i in range(arry.contents.nelements):
+                        value.append(arnold.AiArrayGetInt(arry, i))
+                elif arry.contents.type == arnold.AI_TYPE_UINT:
+                    value = IECore.IntVectorData()
+                    for i in range(arry.contents.nelements):
+                        value.append(arnold.AiArrayGetUInt(arry, i))
+                elif arry.contents.type == arnold.AI_TYPE_BYTE:
+                    value = IECore.IntVectorData()
+                    for i in range(arry.contents.nelements):
+                        value.append(arnold.AiArrayGetByte(arry, i))
+
+                elif arry.contents.type == arnold.AI_TYPE_FLOAT:
+                    value = IECore.FloatVectorData()
+                    for i in range(arry.contents.nelements):
+                        value.append(arnold.AiArrayGetFlt(arry, i))
+
+                elif arry.contents.type == arnold.AI_TYPE_BOOLEAN:
+                    value = IECore.BoolVectorData()
+                    for i in range(arry.contents.nelements):
+                        value.append(arnold.AiArrayGetBool(arry, i))
+
+                elif arry.contents.type == arnold.AI_TYPE_RGB:
+                    value = IECore.V3fVectorData()
+                    for i in range(arry.contents.nelements):
+                        rgb = arnold.AiArrayGetRGB(arry, i)
+                        value.append(IECore.V3f(rgb.r, rgb.g, rgb.b))
+                elif arry.contents.type == arnold.AI_TYPE_RGBA:
+                    value = IECore.V3fVectorData()
+                    for i in range(arry.contents.nelements):
+                        rgba = arnold.AiArrayGetRGBA(arry, i)
+                        value.append(IECore.V3f(rgba.r, rgba.g, rgba.b))
+                elif arry.contents.type == arnold.AI_TYPE_VECTOR:
+                    value = IECore.V3fVectorData()
+                    for i in range(arry.contents.nelements):
+                        vec = arnold.AiArrayGetVec(arry, i)
+                        value.append(IECore.V3f(vec.r, vec.g, vec.b))
+                elif arry.contents.type == arnold.AI_TYPE_POINT:
+                    value = IECore.V3fVectorData()
+                    for i in range(arry.contents.nelements):
+                        pnt = arnold.AiArrayGetPnt(arry, i)
+                        value.append(IECore.V3f(pnt.r, pnt.g, pnt.b))
+
+                elif arry.contents.type == arnold.AI_TYPE_STRING:
+                    value = IECore.StringVectorData()
+                    for i in range(arry.contents.nelements):
+                        txt = arnold.AiArrayGetStr(arry, i)
+                        value.append(txt)
+
+                else:
+                    value = None
+
             else:
-                # todo : AI_TYPE_POINT2, AI_TYPE_POINTER, AI_TYPE_ARRAY, AI_TYPE_MATRIX, AI_TYPE_UNDEFINED, AI_TYPE_NONE
+                # todo : AI_TYPE_POINTER, AI_TYPE_MATRIX, AI_TYPE_UNDEFINED, AI_TYPE_NONE
                 print "[CreateShaderFromASS] Not supported type : %s - %s %s" % (arnold.AiParamGetTypeName(param_type), arnold.AiNodeGetStr(node, "name"), param_name)
                 value = None
 
@@ -160,8 +220,12 @@ def CreateShaderFromASS(ass_file, script=None, exclude_list=["utility"], hook_fu
     for shader_name, shader_value in shader_dict.items():
         shader_node = shaders.get(shader_name)
         shader_type = shader_value.get("type")
+        existing_parms = shader_node["parameters"].keys()
         for param_name, parm_data in shader_value["params"].items():
             if param_name == "name":
+                continue
+
+            if not param_name in existing_parms:
                 continue
 
             value = parm_data.get("value")
